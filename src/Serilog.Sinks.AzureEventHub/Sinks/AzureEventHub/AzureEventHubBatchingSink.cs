@@ -29,23 +29,21 @@ namespace Serilog.Sinks.AzureEventHub
     public class AzureEventHubBatchingSink : PeriodicBatchingSink
     {
         readonly EventHubClient _eventHubClient;
-        readonly string _partitionKey;
         readonly ITextFormatter _formatter;
 
         /// <summary>
         /// Construct a sink that saves log events to the specified EventHubClient.
         /// </summary>
         /// <param name="eventHubClient">The EventHubClient to use in this sink.</param>
-        /// <param name="partitionKey">PartitionKey to group events by within the Event Hub.</param>
         /// <param name="formatter">Provides formatting for outputting log data</param>
         /// <param name="batchSizeLimit"></param>
         /// <param name="period"></param>
         public AzureEventHubBatchingSink(
             EventHubClient eventHubClient,
-            string partitionKey,
             ITextFormatter formatter,
-            int batchSizeLimit, 
-            TimeSpan period) : base(batchSizeLimit, period)
+            int batchSizeLimit,
+            TimeSpan period)
+            : base(batchSizeLimit, period)
         {
             if (batchSizeLimit < 1 || batchSizeLimit > 100)
             {
@@ -54,7 +52,6 @@ namespace Serilog.Sinks.AzureEventHub
             }
 
             _eventHubClient = eventHubClient;
-            _partitionKey = partitionKey;
             _formatter = formatter;
         }
 
@@ -65,18 +62,24 @@ namespace Serilog.Sinks.AzureEventHub
         protected override void EmitBatch(IEnumerable<LogEvent> events)
         {
             var batchedEvents = new List<EventData>();
+            var batchPartitionKey = Guid.NewGuid().ToString();
 
+            // Possible optimizations for the below:
+            // 1. Reuse a StringWriter object for the whole batch, or possibly across batches.
+            // 2. Reuse byte[] buffers instead of reallocating every time.
             foreach (var logEvent in events)
             {
-                var render = new StringWriter();
-                _formatter.Format(logEvent, render);
-
-                var eventHubData = new EventData(Encoding.UTF8.GetBytes(render.ToString()))
+                byte[] body;
+                using (var render = new StringWriter())
                 {
-                    PartitionKey = _partitionKey
+                    _formatter.Format(logEvent, render);
+                    body = Encoding.UTF8.GetBytes(render.ToString());
+                }
+                var eventHubData = new EventData(body)
+                {
+                    PartitionKey = batchPartitionKey
                 };
-                eventHubData.Properties.Add(
-                    "Type", "SerilogEvent_" + DateTime.Now.ToLongTimeString());
+                eventHubData.Properties.Add("Type", "SerilogEvent");
 
                 batchedEvents.Add(eventHubData);
             }

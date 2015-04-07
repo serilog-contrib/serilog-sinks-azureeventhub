@@ -32,11 +32,6 @@ namespace Serilog
         const string DefaultOutputTemplate = "{Timestamp:yyyy-MM-dd HH:mm:ss.fff zzz} [{Level}] {Message}{NewLine}{Exception}";
 
         /// <summary>
-        /// A default partion key that will group all serilog log events.
-        /// </summary>
-        private const string DefaultPartitionKey = "SerilogLogEvent";
-
-        /// <summary>
         /// A reasonable default for the number of events posted in each batch.
         /// </summary>
         private const int DefaultBatchPostingLimit = 50;
@@ -51,7 +46,6 @@ namespace Serilog
         /// </summary>
         /// <param name="loggerConfiguration">The logger configuration.</param>
         /// <param name="eventHubClient">The Event Hub to use to insert the log entries to.</param>
-        /// <param name="partitionKey">The partition key used to group log events in the Event Hub.</param>
         /// <param name="formatProvider">Supplies culture-specific formatting information, or null.</param>
         /// <param name="outputTemplate">A message template describing the format used to write to the sink.
         /// the default is "{Timestamp} [{Level}] {Message}{NewLine}{Exception}".</param>
@@ -65,7 +59,6 @@ namespace Serilog
         public static LoggerConfiguration AzureEventHub(
             this LoggerSinkConfiguration loggerConfiguration,
             EventHubClient eventHubClient,
-            string partitionKey = null,
             string outputTemplate = DefaultOutputTemplate,
             IFormatProvider formatProvider = null,
             LogEventLevel restrictedToMinimumLevel = LevelAlias.Minimum,
@@ -86,13 +79,11 @@ namespace Serilog
             var sink = writeInBatches ?
                 (ILogEventSink) new AzureEventHubBatchingSink(
                     eventHubClient,
-                    partitionKey ?? DefaultPartitionKey,
                     formatter,
                     batchPostingLimit ?? DefaultBatchPostingLimit,
                     period ?? DefaultPeriod) :
                 new AzureEventHubSink(
                     eventHubClient,
-                    partitionKey ?? DefaultPartitionKey,
                     formatter);
 
             return loggerConfiguration.Sink(sink, restrictedToMinimumLevel);
@@ -104,7 +95,6 @@ namespace Serilog
         /// <param name="loggerConfiguration">The logger configuration.</param>
         /// <param name="connectionString">The Event Hub connection string.</param>
         /// <param name="eventHubName">The Event Hub name.</param>
-        /// <param name="partitionKey">The partition key used to group log events in the Event Hub.</param>
         /// /// <param name="formatProvider">Supplies culture-specific formatting information, or null.</param>
         /// <param name="outputTemplate">A message template describing the format used to write to the sink.
         /// the default is "{Timestamp} [{Level}] {Message}{NewLine}{Exception}".</param>
@@ -119,7 +109,6 @@ namespace Serilog
             this LoggerSinkConfiguration loggerConfiguration,
             string connectionString,
             string eventHubName,
-            string partitionKey = null,
             string outputTemplate = DefaultOutputTemplate,
             IFormatProvider formatProvider = null,
             LogEventLevel restrictedToMinimumLevel = LevelAlias.Minimum,
@@ -141,7 +130,6 @@ namespace Serilog
             return AzureEventHub(
                 loggerConfiguration,
                 client,
-                partitionKey,
                 outputTemplate,
                 formatProvider,
                 restrictedToMinimumLevel,
