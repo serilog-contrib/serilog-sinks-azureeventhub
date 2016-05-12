@@ -28,22 +28,18 @@ namespace Serilog.Sinks.AzureEventHub
     public class AzureEventHubSink : ILogEventSink
     {
         readonly EventHubClient _eventHubClient;
-        readonly string _partitionKey;
         readonly ITextFormatter _formatter;
 
         /// <summary>
         /// Construct a sink that saves log events to the specified EventHubClient.
         /// </summary>
         /// <param name="eventHubClient">The EventHubClient to use in this sink.</param>
-        /// <param name="partitionKey">PartitionKey to group events by within the Event Hub.</param>
         /// <param name="formatter">Provides formatting for outputting log data</param>
         public AzureEventHubSink(
             EventHubClient eventHubClient,
-            string partitionKey,
             ITextFormatter formatter)
         {
             _eventHubClient = eventHubClient;
-            _partitionKey = partitionKey;
             _formatter = formatter;
         }
 
@@ -53,15 +49,17 @@ namespace Serilog.Sinks.AzureEventHub
         /// <param name="logEvent">The log event to write.</param>
         public void Emit(LogEvent logEvent)
         {
-            var render = new StringWriter();
-            _formatter.Format(logEvent, render);
-
-            var eventHubData = new EventData(Encoding.UTF8.GetBytes(render.ToString()))
+            byte[] body;
+            using (var render = new StringWriter())
             {
-                PartitionKey = _partitionKey
+                _formatter.Format(logEvent, render);
+                body = Encoding.UTF8.GetBytes(render.ToString());
+            }
+            var eventHubData = new EventData(body)
+            {
+                PartitionKey = Guid.NewGuid().ToString()
             };
-            eventHubData.Properties.Add(
-                "Type", "SerilogEvent_" + DateTime.Now.ToLongTimeString());
+            eventHubData.Properties.Add("Type", "SerilogEvent");
 
             _eventHubClient.Send(eventHubData);
         }
