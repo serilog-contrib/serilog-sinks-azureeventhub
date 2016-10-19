@@ -13,6 +13,7 @@
 // limitations under the License.
 
 using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Text;
 using Microsoft.ServiceBus.Messaging;
@@ -29,6 +30,7 @@ namespace Serilog.Sinks.AzureEventHub
     {
         readonly EventHubClient _eventHubClient;
         readonly ITextFormatter _formatter;
+        readonly IDictionary<string, string> _customProperties; 
 
         /// <summary>
         /// Construct a sink that saves log events to the specified EventHubClient.
@@ -37,10 +39,12 @@ namespace Serilog.Sinks.AzureEventHub
         /// <param name="formatter">Provides formatting for outputting log data</param>
         public AzureEventHubSink(
             EventHubClient eventHubClient,
-            ITextFormatter formatter)
+            ITextFormatter formatter,
+            IDictionary<string,string> customProperties)
         {
             _eventHubClient = eventHubClient;
             _formatter = formatter;
+            _customProperties = customProperties;
         }
 
         /// <summary>
@@ -59,7 +63,14 @@ namespace Serilog.Sinks.AzureEventHub
             {
                 PartitionKey = Guid.NewGuid().ToString()
             };
-            eventHubData.Properties.Add("Type", "SerilogEvent");
+
+            if (_customProperties != null)
+            {
+                foreach (var prop in _customProperties)
+                {
+                    eventHubData.Properties.Add(prop.Key, prop.Value);
+                }
+            }
 
             _eventHubClient.Send(eventHubData);
         }
