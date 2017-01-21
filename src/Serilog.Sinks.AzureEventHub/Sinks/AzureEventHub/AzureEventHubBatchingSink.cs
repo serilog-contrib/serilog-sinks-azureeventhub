@@ -59,7 +59,7 @@ namespace Serilog.Sinks.AzureEventHub
         /// Emit a batch of log events, running to completion synchronously.
         /// </summary>
         /// <param name="events">The events to emit.</param>
-        protected override void EmitBatch(IEnumerable<LogEvent> events)
+        protected override Task EmitBatchAsync(IEnumerable<LogEvent> events)
         {
             var batchedEvents = new List<EventData>();
             var batchPartitionKey = Guid.NewGuid().ToString();
@@ -84,7 +84,7 @@ namespace Serilog.Sinks.AzureEventHub
                 batchedEvents.Add(eventHubData);
             }
 
-            _eventHubClient.SendBatch(batchedEvents);
+            return _eventHubClient.SendBatchAsync(batchedEvents);
         }
     }
 }
