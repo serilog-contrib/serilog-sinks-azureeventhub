@@ -82,7 +82,7 @@ namespace Serilog
             var sink = writeInBatches ?
                 (ILogEventSink) new AzureEventHubBatchingSink(
                     eventHubClient,
-                    textFormatter,
+                    formatter,
                     batchPostingLimit ?? DefaultBatchPostingLimit,
                     period ?? DefaultPeriod) :
                 new AzureEventHubSink(
