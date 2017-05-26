@@ -55,7 +55,6 @@ namespace Serilog
         /// key used for the events so is not enabled by default.</param>
         /// <param name="batchPostingLimit">The maximum number of events to post in a single batch.</param>
         /// <param name="period">The time to wait between checking for event batches.</param>
-        /// <param name="textFormatter">Formatter used to convert log events to text.</param>
         /// <returns>Logger configuration, allowing configuration to continue.</returns>
         /// <exception cref="ArgumentNullException">A required parameter is null.</exception>
         public static LoggerConfiguration AzureEventHub(
@@ -66,8 +65,7 @@ namespace Serilog
             LogEventLevel restrictedToMinimumLevel = LevelAlias.Minimum,
             bool writeInBatches = false,
             TimeSpan? period = null,
-            int? batchPostingLimit = null,
-            ITextFormatter textFormatter = null
+            int? batchPostingLimit = null
             )
         {
             if (loggerConfiguration == null) 
@@ -77,17 +75,45 @@ namespace Serilog
             if (outputTemplate == null) 
                 throw new ArgumentNullException("outputTemplate");
 
-            var formatter = textFormatter ?? new MessageTemplateTextFormatter(outputTemplate, formatProvider);
+            var formatter = new MessageTemplateTextFormatter(outputTemplate, formatProvider);
+
+            return AzureEventHub(loggerConfiguration, formatter, eventHubClient, restrictedToMinimumLevel,writeInBatches, period, batchPostingLimit);
+        }
+
+        /// <summary>
+        /// A sink that puts log events into a provided Azure Event Hub.
+        /// </summary>
+        /// <param name="loggerConfiguration">The logger configuration.</param>
+        /// <param name="formatter">Formatter used to convert log events to text.</param>
+        /// <param name="eventHubClient">The Event Hub to use to insert the log entries to.</param>
+        /// <param name="restrictedToMinimumLevel">The minimum log event level required in order to write an event to the sink.</param>
+        /// <param name="writeInBatches">Use a periodic batching sink, as opposed to a synchronous one-at-a-time sink; this alters the partition
+        /// key used for the events so is not enabled by default.</param>
+        /// <param name="batchPostingLimit">The maximum number of events to post in a single batch.</param>
+        /// <param name="period">The time to wait between checking for event batches.</param>
+        /// <returns>Logger configuration, allowing configuration to continue.</returns>
+        /// <exception cref="ArgumentNullException">A required parameter is null.</exception>
+        public static LoggerConfiguration AzureEventHub(
+            this LoggerSinkConfiguration loggerConfiguration,
+            ITextFormatter formatter,
+            EventHubClient eventHubClient,
+            LogEventLevel restrictedToMinimumLevel = LevelAlias.Minimum,
+            bool writeInBatches = false,
+            TimeSpan? period = null,
+            int? batchPostingLimit = null)
+        {
+            if (loggerConfiguration == null)
+                throw new ArgumentNullException("loggerConfiguration");
+            if (eventHubClient == null)
+                throw new ArgumentNullException("eventHubClient");
 
             var sink = writeInBatches ?
-                (ILogEventSink) new AzureEventHubBatchingSink(
+                (ILogEventSink)new AzureEventHubBatchingSink(
                     eventHubClient,
                     formatter,
                     batchPostingLimit ?? DefaultBatchPostingLimit,
                     period ?? DefaultPeriod) :
-                new AzureEventHubSink(
-                    eventHubClient,
-                    formatter);
+                new AzureEventHubSink(eventHubClient, formatter);
 
             return loggerConfiguration.Sink(sink, restrictedToMinimumLevel);
         }
@@ -106,7 +132,6 @@ namespace Serilog
         /// key used for the events so is not enabled by default.</param>
         /// <param name="batchPostingLimit">The maximum number of events to post in a single batch.</param>
         /// <param name="period">The time to wait between checking for event batches.</param>
-        /// <param name="textFormatter">Formatter used to convert log events to text.</param>
         /// <returns>Logger configuration, allowing configuration to continue.</returns>
         /// <exception cref="ArgumentNullException">A required parameter is null.</exception>
         public static LoggerConfiguration AzureEventHub(
@@ -118,8 +143,7 @@ namespace Serilog
             LogEventLevel restrictedToMinimumLevel = LevelAlias.Minimum,
             bool writeInBatches = false,
             TimeSpan? period = null,
-            int? batchPostingLimit = null,
-            ITextFormatter textFormatter = null
+            int? batchPostingLimit = null
             )
         {
             if (loggerConfiguration == null)
@@ -129,19 +153,46 @@ namespace Serilog
             if (string.IsNullOrWhiteSpace(eventHubName))
                 throw new ArgumentNullException("eventHubName");
 
-            var client = EventHubClient.CreateFromConnectionString(
-                connectionString, eventHubName);
+            var client = EventHubClient.CreateFromConnectionString(connectionString, eventHubName);
 
-            return AzureEventHub(
-                loggerConfiguration,
-                client,
-                outputTemplate,
-                formatProvider,
-                restrictedToMinimumLevel,
-                writeInBatches,
-                period,
-                batchPostingLimit,
-                textFormatter);
+            return AzureEventHub(loggerConfiguration, client, outputTemplate, formatProvider, restrictedToMinimumLevel, writeInBatches, period, batchPostingLimit);
+        }
+
+        /// <summary>
+        /// A sink that puts log events into a provided Azure Event Hub.
+        /// </summary>
+        /// <param name="loggerConfiguration">The logger configuration.</param>
+        /// <param name="formatter">Formatter used to convert log events to text.</param>
+        /// <param name="connectionString">The Event Hub connection string.</param>
+        /// <param name="eventHubName">The Event Hub name.</param>
+        /// <param name="restrictedToMinimumLevel">The minimum log event level required in order to write an event to the sink.</param>
+        /// <param name="writeInBatches">Use a periodic batching sink, as opposed to a synchronous one-at-a-time sink; this alters the partition
+        /// key used for the events so is not enabled by default.</param>
+        /// <param name="batchPostingLimit">The maximum number of events to post in a single batch.</param>
+        /// <param name="period">The time to wait between checking for event batches.</param>
+        /// <returns>Logger configuration, allowing configuration to continue.</returns>
+        /// <exception cref="ArgumentNullException">A required parameter is null.</exception>
+        public static LoggerConfiguration AzureEventHub(
+            this LoggerSinkConfiguration loggerConfiguration,
+            ITextFormatter formatter,
+            string connectionString,
+            string eventHubName,
+            LogEventLevel restrictedToMinimumLevel = LevelAlias.Minimum,
+            bool writeInBatches = false,
+            TimeSpan? period = null,
+            int? batchPostingLimit = null
+        )
+        {
+            if (loggerConfiguration == null)
+                throw new ArgumentNullException("loggerConfiguration");
+            if (string.IsNullOrWhiteSpace(connectionString))
+                throw new ArgumentNullException("connectionString");
+            if (string.IsNullOrWhiteSpace(eventHubName))
+                throw new ArgumentNullException("eventHubName");
+
+            var client = EventHubClient.CreateFromConnectionString(connectionString, eventHubName);
+
+            return AzureEventHub(loggerConfiguration, formatter, client, restrictedToMinimumLevel, writeInBatches, period, batchPostingLimit);
         }
     }
 }
