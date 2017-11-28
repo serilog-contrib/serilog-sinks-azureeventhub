@@ -14,7 +14,7 @@
 
 using System;
 using System.Diagnostics.CodeAnalysis;
-using Microsoft.ServiceBus.Messaging;
+using Microsoft.Azure.EventHubs;
 using Serilog.Configuration;
 using Serilog.Core;
 using Serilog.Events;
