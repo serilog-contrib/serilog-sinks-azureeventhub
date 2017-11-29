@@ -29,8 +29,8 @@ namespace Serilog.Sinks.AzureEventHub
     /// </summary>
     public class AzureEventHubBatchingSink : PeriodicBatchingSink
     {
-        readonly EventHubClient _eventHubClient;
-        readonly ITextFormatter _formatter;
+        private readonly EventHubClient _eventHubClient;
+        private readonly ITextFormatter _formatter;
 
         /// <summary>
         /// Construct a sink that saves log events to the specified EventHubClient.
