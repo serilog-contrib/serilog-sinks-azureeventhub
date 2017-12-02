@@ -15,7 +15,7 @@
 using System;
 using System.IO;
 using System.Text;
-using Microsoft.ServiceBus.Messaging;
+using Microsoft.Azure.EventHubs;
 using Serilog.Core;
 using Serilog.Events;
 using Serilog.Formatting;
@@ -55,13 +55,12 @@ namespace Serilog.Sinks.AzureEventHub
                 _formatter.Format(logEvent, render);
                 body = Encoding.UTF8.GetBytes(render.ToString());
             }
-            var eventHubData = new EventData(body)
-            {
-                PartitionKey = Guid.NewGuid().ToString()
-            };
+            var eventHubData = new EventData(body);
             eventHubData.Properties.Add("Type", "SerilogEvent");
 
-            _eventHubClient.Send(eventHubData);
+            //Unfortunately no support for async in Serilog yet
+            //https://github.com/serilog/serilog/issues/134
+            _eventHubClient.SendAsync(eventHubData, Guid.NewGuid().ToString()).GetAwaiter().GetResult();
         }
     }
 }

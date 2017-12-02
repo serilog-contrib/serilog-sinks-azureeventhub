@@ -14,7 +14,7 @@
 
 using System;
 using System.Diagnostics.CodeAnalysis;
-using Microsoft.ServiceBus.Messaging;
+using Microsoft.Azure.EventHubs;
 using Serilog.Configuration;
 using Serilog.Core;
 using Serilog.Events;
@@ -153,7 +153,12 @@ namespace Serilog
             if (string.IsNullOrWhiteSpace(eventHubName))
                 throw new ArgumentNullException("eventHubName");
 
-            var client = EventHubClient.CreateFromConnectionString(connectionString, eventHubName);
+            var connectionstringBuilder = new EventHubsConnectionStringBuilder(connectionString)
+            {
+                EntityPath = eventHubName
+            };
+
+            var client = EventHubClient.CreateFromConnectionString(connectionstringBuilder.ToString());
 
             return AzureEventHub(loggerConfiguration, client, outputTemplate, formatProvider, restrictedToMinimumLevel, writeInBatches, period, batchPostingLimit);
         }
@@ -190,7 +195,11 @@ namespace Serilog
             if (string.IsNullOrWhiteSpace(eventHubName))
                 throw new ArgumentNullException("eventHubName");
 
-            var client = EventHubClient.CreateFromConnectionString(connectionString, eventHubName);
+            var connectionStringBuilder = new EventHubsConnectionStringBuilder(connectionString)
+            {
+                EntityPath = eventHubName
+            };
+            var client = EventHubClient.CreateFromConnectionString(connectionStringBuilder.ToString());
 
             return AzureEventHub(loggerConfiguration, formatter, client, restrictedToMinimumLevel, writeInBatches, period, batchPostingLimit);
         }

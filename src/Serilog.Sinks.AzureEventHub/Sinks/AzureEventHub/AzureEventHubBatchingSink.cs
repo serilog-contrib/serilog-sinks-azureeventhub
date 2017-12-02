@@ -17,7 +17,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Text;
 using System.Threading.Tasks;
-using Microsoft.ServiceBus.Messaging;
+using Microsoft.Azure.EventHubs;
 using Serilog.Events;
 using Serilog.Formatting;
 using Serilog.Sinks.PeriodicBatching;
@@ -29,8 +29,8 @@ namespace Serilog.Sinks.AzureEventHub
     /// </summary>
     public class AzureEventHubBatchingSink : PeriodicBatchingSink
     {
-        readonly EventHubClient _eventHubClient;
-        readonly ITextFormatter _formatter;
+        private readonly EventHubClient _eventHubClient;
+        private readonly ITextFormatter _formatter;
 
         /// <summary>
         /// Construct a sink that saves log events to the specified EventHubClient.
@@ -76,16 +76,13 @@ namespace Serilog.Sinks.AzureEventHub
                     _formatter.Format(logEvent, render);
                     body = Encoding.UTF8.GetBytes(render.ToString());
                 }
-                var eventHubData = new EventData(body)
-                {
-                    PartitionKey = batchPartitionKey
-                };
+                var eventHubData = new EventData(body);
+                
                 eventHubData.Properties.Add("Type", "SerilogEvent");
 
                 batchedEvents.Add(eventHubData);
             }
-
-            return _eventHubClient.SendBatchAsync(batchedEvents);
+            return _eventHubClient.SendAsync(batchedEvents, batchPartitionKey);
         }
     }
 }
