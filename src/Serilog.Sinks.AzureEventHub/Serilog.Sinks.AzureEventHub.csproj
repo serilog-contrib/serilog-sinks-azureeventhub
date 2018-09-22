@@ -16,7 +16,7 @@
 		<PackageProjectUrl>http://serilog.net</PackageProjectUrl>
 		<PackageLicenseUrl>http://www.apache.org/licenses/LICENSE-2.0</PackageLicenseUrl>
 		<RepositoryUrl>https://github.com/serilog/serilog-sinks-azureeventhub</RepositoryUrl>
-    	<RepositoryType>git</RepositoryType>
+    	        <RepositoryType>git</RepositoryType>
 		<GenerateAssemblyVersionAttribute>false</GenerateAssemblyVersionAttribute>
 		<RootNamespace>Serilog</RootNamespace>
 		<TreatWarningsAsErrors>true</TreatWarningsAsErrors>
