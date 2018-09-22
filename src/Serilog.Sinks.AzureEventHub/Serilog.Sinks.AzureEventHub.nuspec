@@ -9,6 +9,7 @@
     <projectUrl>http://serilog.net</projectUrl>
     <licenseUrl>http://www.apache.org/licenses/LICENSE-2.0</licenseUrl>
     <iconUrl>http://serilog.net/images/serilog-sink-nuget.png</iconUrl>
+    <repository type="git" url="https://github.com/serilog/serilog-sinks-azureeventhub" />
     <tags>serilog logging azure</tags>
     <dependencies>
       <dependency id="Microsoft.WindowsAzure.ConfigurationManager" version="3.2.1" />
