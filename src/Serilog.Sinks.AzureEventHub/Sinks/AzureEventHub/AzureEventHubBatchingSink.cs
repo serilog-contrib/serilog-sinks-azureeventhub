@@ -79,6 +79,7 @@ namespace Serilog.Sinks.AzureEventHub
                 var eventHubData = new EventData(body);
                 
                 eventHubData.Properties.Add("Type", "SerilogEvent");
+                eventHubData.Properties.Add("Level", logEvent.Level.ToString());
 
                 batchedEvents.Add(eventHubData);
             }
