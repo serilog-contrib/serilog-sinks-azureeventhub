@@ -58,6 +58,10 @@ namespace Serilog.Sinks.AzureEventHub
             var eventHubData = new EventData(body);
             eventHubData.Properties.Add("Type", "SerilogEvent");
             eventHubData.Properties.Add("Level", logEvent.Level.ToString());
+            foreach (var logEventProperty in logEvent.Properties)
+            {
+                eventHubData.Properties.Add(logEventProperty.Key, logEventProperty.Value.ToString());
+            }
 
             //Unfortunately no support for async in Serilog yet
             //https://github.com/serilog/serilog/issues/134
