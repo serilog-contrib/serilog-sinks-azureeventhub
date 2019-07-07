@@ -20,6 +20,7 @@ using System.Threading.Tasks;
 using Microsoft.Azure.EventHubs;
 using Serilog.Events;
 using Serilog.Formatting;
+using Serilog.Sinks.AzureEventHub.Extensions;
 using Serilog.Sinks.PeriodicBatching;
 
 namespace Serilog.Sinks.AzureEventHub
@@ -77,13 +78,10 @@ namespace Serilog.Sinks.AzureEventHub
                     body = Encoding.UTF8.GetBytes(render.ToString());
                 }
                 var eventHubData = new EventData(body);
-                
+
                 eventHubData.Properties.Add("Type", "SerilogEvent");
                 eventHubData.Properties.Add("Level", logEvent.Level.ToString());
-                foreach (var logEventProperty in logEvent.Properties)
-                {
-                    eventHubData.Properties.Add(logEventProperty.Key, logEventProperty.Value.ToString());
-                }
+                eventHubData.AddEventProperties(logEvent.Properties);
 
                 batchedEvents.Add(eventHubData);
             }
