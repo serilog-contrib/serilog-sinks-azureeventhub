@@ -12,10 +12,9 @@
     <repository type="git" url="https://github.com/serilog/serilog-sinks-azureeventhub" />
     <tags>serilog logging azure</tags>
     <dependencies>
-      <dependency id="Microsoft.WindowsAzure.ConfigurationManager" version="3.2.1" />
-      <dependency id="Serilog" version="[2,2.3.0]" />
-      <dependency id="Serilog.Sinks.PeriodicBatching" version="[2,2.0.1]" />
-      <dependency id="WindowsAzure.ServiceBus" version="3.4.0" />
+      <dependency id="Serilog" version="[2.2.0,2.5.0]" />
+      <dependency id="Serilog.Sinks.PeriodicBatching" version="[2,2.1.1]" />
+      <dependency id="Microsoft.Azure.EventHubs" version="[1.0.3]" />
     </dependencies>
   </metadata>
 </package>
