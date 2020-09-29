@@ -1,7 +1,7 @@
 <Project Sdk="Microsoft.NET.Sdk">
 	<PropertyGroup>
 		<Description>Write Serilog events to Azure Event Hub</Description>
-		<VersionPrefix>4.1.0</VersionPrefix>
+		<VersionPrefix>5.0.0</VersionPrefix>
 		<Authors>Serilog Contributors</Authors>
 		<TargetFrameworks>netstandard2.0;net461;net451</TargetFrameworks>
 		<GenerateDocumentationFile>true</GenerateDocumentationFile>
