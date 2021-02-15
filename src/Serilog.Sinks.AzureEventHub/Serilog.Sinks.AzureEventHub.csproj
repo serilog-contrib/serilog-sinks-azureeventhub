@@ -24,7 +24,7 @@
 	</PropertyGroup>
 
 	<ItemGroup>
-		<PackageReference Include="Microsoft.Azure.EventHubs" Version="1.0.3" />
+		<PackageReference Include="Microsoft.Azure.EventHubs" Version="4.3.1" />
 		<PackageReference Include="Serilog" Version="2.5.0" />
 		<PackageReference Include="Serilog.Sinks.PeriodicBatching" Version="2.1.1" />
 	</ItemGroup>
