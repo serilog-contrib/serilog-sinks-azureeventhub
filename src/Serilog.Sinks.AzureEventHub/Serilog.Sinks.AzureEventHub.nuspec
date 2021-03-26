@@ -14,7 +14,7 @@
     <dependencies>
       <dependency id="Serilog" version="[2.2.0,2.5.0]" />
       <dependency id="Serilog.Sinks.PeriodicBatching" version="[2,2.1.1]" />
-      <dependency id="Microsoft.Azure.EventHubs" version="[1.0.3]" />
+      <dependency id="Microsoft.Azure.EventHubs" version="4.*" />
     </dependencies>
   </metadata>
 </package>
