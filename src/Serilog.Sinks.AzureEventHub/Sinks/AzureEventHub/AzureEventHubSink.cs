@@ -1,11 +1,11 @@
 ﻿// Copyright 2014 Serilog Contributors
-// 
+//
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
-// 
-//     http://www.apache.org/licenses/LICENSE-2.0
-// 
+//
+// http://www.apache.org/licenses/LICENSE-2.0
+//
 // Unless required by applicable law or agreed to in writing, software
 // distributed under the License is distributed on an "AS IS" BASIS,
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -13,12 +13,17 @@
 // limitations under the License.
 
 using System;
+using System.Collections;
+using System.Collections.Generic;
+using System.Dynamic;
 using System.IO;
+using System.Linq;
 using System.Text;
 using Microsoft.Azure.EventHubs;
 using Serilog.Core;
 using Serilog.Events;
 using Serilog.Formatting;
+using Serilog.Sinks.AzureEventHub.Extensions;
 
 namespace Serilog.Sinks.AzureEventHub
 {
@@ -36,8 +41,8 @@ namespace Serilog.Sinks.AzureEventHub
         /// <param name="eventHubClient">The EventHubClient to use in this sink.</param>
         /// <param name="formatter">Provides formatting for outputting log data</param>
         public AzureEventHubSink(
-            EventHubClient eventHubClient,
-            ITextFormatter formatter)
+        EventHubClient eventHubClient,
+        ITextFormatter formatter)
         {
             _eventHubClient = eventHubClient;
             _formatter = formatter;
@@ -58,6 +63,8 @@ namespace Serilog.Sinks.AzureEventHub
             var eventHubData = new EventData(body);
             eventHubData.Properties.Add("Type", "SerilogEvent");
             eventHubData.Properties.Add("Level", logEvent.Level.ToString());
+
+            eventHubData.AddEventProperties(logEvent.Properties);
 
             //Unfortunately no support for async in Serilog yet
             //https://github.com/serilog/serilog/issues/134
