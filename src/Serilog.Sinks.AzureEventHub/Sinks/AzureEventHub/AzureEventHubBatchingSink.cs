@@ -17,7 +17,8 @@ using System.Collections.Generic;
 using System.IO;
 using System.Text;
 using System.Threading.Tasks;
-using Microsoft.Azure.EventHubs;
+using Azure.Messaging.EventHubs;
+using Azure.Messaging.EventHubs.Producer;
 using Serilog.Events;
 using Serilog.Formatting;
 using Serilog.Sinks.PeriodicBatching;
@@ -29,7 +30,7 @@ namespace Serilog.Sinks.AzureEventHub
     /// </summary>
     public class AzureEventHubBatchingSink : PeriodicBatchingSink
     {
-        private readonly EventHubClient _eventHubClient;
+        private readonly EventHubProducerClient _eventHubClient;
         private readonly ITextFormatter _formatter;
 
         /// <summary>
@@ -40,7 +41,7 @@ namespace Serilog.Sinks.AzureEventHub
         /// <param name="batchSizeLimit"></param>
         /// <param name="period"></param>
         public AzureEventHubBatchingSink(
-            EventHubClient eventHubClient,
+            EventHubProducerClient eventHubClient,
             ITextFormatter formatter,
             int batchSizeLimit,
             TimeSpan period)
@@ -83,7 +84,7 @@ namespace Serilog.Sinks.AzureEventHub
 
                 batchedEvents.Add(eventHubData);
             }
-            return _eventHubClient.SendAsync(batchedEvents, batchPartitionKey);
+            return _eventHubClient.SendAsync(batchedEvents, new SendEventOptions() { PartitionKey = batchPartitionKey });
         }
     }
 }
