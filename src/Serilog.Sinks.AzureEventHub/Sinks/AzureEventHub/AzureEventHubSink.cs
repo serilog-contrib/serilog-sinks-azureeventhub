@@ -61,6 +61,8 @@ namespace Serilog.Sinks.AzureEventHub
             eventHubData.Properties.Add("Type", "SerilogEvent");
             eventHubData.Properties.Add("Level", logEvent.Level.ToString());
 
+            AzureEventHubLogContext.PushCustomPropertiesToEventHubData(logEvent, eventHubData);
+
             //Unfortunately no support for async in Serilog yet
             //https://github.com/serilog/serilog/issues/134
             _eventHubClient.SendAsync(new List<EventData>() { eventHubData } , new SendEventOptions() { PartitionKey = Guid.NewGuid().ToString() }).GetAwaiter().GetResult();

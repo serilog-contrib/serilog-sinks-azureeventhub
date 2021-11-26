@@ -82,6 +82,8 @@ namespace Serilog.Sinks.AzureEventHub
                 eventHubData.Properties.Add("Type", "SerilogEvent");
                 eventHubData.Properties.Add("Level", logEvent.Level.ToString());
 
+                AzureEventHubLogContext.PushCustomPropertiesToEventHubData(logEvent, eventHubData);
+
                 batchedEvents.Add(eventHubData);
             }
             return _eventHubClient.SendAsync(batchedEvents, new SendEventOptions() { PartitionKey = batchPartitionKey });
