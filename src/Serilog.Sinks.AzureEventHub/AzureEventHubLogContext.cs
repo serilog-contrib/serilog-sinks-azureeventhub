@@ -43,7 +43,7 @@ namespace Serilog
                 var value = GetEventPropertyValue(item.Value);
                 if (value is IDictionary<string, object> dic)
                 {
-                    FaltternDictionary(dic, eventHubData, item.Key);
+                    FlattenDictionary(dic, eventHubData, item.Key);
                 }
                 else
                 {
@@ -52,14 +52,14 @@ namespace Serilog
             }
         }
 
-        private static void FaltternDictionary(IDictionary<string, object> nestedDictionary, EventData eventHubData, string parentPropertyName)
+        private static void FlattenDictionary(IDictionary<string, object> nestedDictionary, EventData eventHubData, string parentPropertyName)
         {
             foreach (var item in nestedDictionary)
             {
                 var propertyName = $"{parentPropertyName}.{item.Key}";
                 if (item.Value is IDictionary<string, object> dic)
                 {
-                    FaltternDictionary(dic, eventHubData, propertyName);
+                    FlattenDictionary(dic, eventHubData, propertyName);
                 }
                 else
                 {
