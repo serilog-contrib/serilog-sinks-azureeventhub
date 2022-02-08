@@ -7,14 +7,14 @@
     <description>Serilog event sink that writes to Azure Event Hubs.</description>
     <language>en-US</language>
     <projectUrl>http://serilog.net</projectUrl>
-    <licenseUrl>http://www.apache.org/licenses/LICENSE-2.0</licenseUrl>
-    <iconUrl>http://serilog.net/images/serilog-sink-nuget.png</iconUrl>
+    <PackageLicenseExpression>Apache-2.0</PackageLicenseExpression>
+    <PackageIconUrl>http://serilog.net/images/serilog-sink-nuget.png</PackageIconUrl>
     <repository type="git" url="https://github.com/serilog/serilog-sinks-azureeventhub" />
     <tags>serilog logging azure</tags>
     <dependencies>
       <dependency id="Serilog" version="[2.2.0,2.5.0]" />
       <dependency id="Serilog.Sinks.PeriodicBatching" version="[2,2.1.1]" />
-      <dependency id="Microsoft.Azure.EventHubs" version="[1.0.3]" />
+      <dependency id="Azure.Messaging.EventHubs" version="5.*" />
     </dependencies>
   </metadata>
 </package>

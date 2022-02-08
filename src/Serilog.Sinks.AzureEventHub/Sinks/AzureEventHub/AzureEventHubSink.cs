@@ -13,9 +13,11 @@
 // limitations under the License.
 
 using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Text;
-using Microsoft.Azure.EventHubs;
+using Azure.Messaging.EventHubs;
+using Azure.Messaging.EventHubs.Producer;
 using Serilog.Core;
 using Serilog.Events;
 using Serilog.Formatting;
@@ -27,7 +29,7 @@ namespace Serilog.Sinks.AzureEventHub
     /// </summary>
     public class AzureEventHubSink : ILogEventSink
     {
-        readonly EventHubClient _eventHubClient;
+        readonly EventHubProducerClient _eventHubClient;
         readonly ITextFormatter _formatter;
 
         /// <summary>
@@ -36,7 +38,7 @@ namespace Serilog.Sinks.AzureEventHub
         /// <param name="eventHubClient">The EventHubClient to use in this sink.</param>
         /// <param name="formatter">Provides formatting for outputting log data</param>
         public AzureEventHubSink(
-            EventHubClient eventHubClient,
+            EventHubProducerClient eventHubClient,
             ITextFormatter formatter)
         {
             _eventHubClient = eventHubClient;
@@ -61,7 +63,7 @@ namespace Serilog.Sinks.AzureEventHub
 
             //Unfortunately no support for async in Serilog yet
             //https://github.com/serilog/serilog/issues/134
-            _eventHubClient.SendAsync(eventHubData, Guid.NewGuid().ToString()).GetAwaiter().GetResult();
+            _eventHubClient.SendAsync(new List<EventData>() { eventHubData } , new SendEventOptions() { PartitionKey = Guid.NewGuid().ToString() }).GetAwaiter().GetResult();
         }
     }
 }

@@ -14,7 +14,7 @@
 
 using System;
 using System.Diagnostics.CodeAnalysis;
-using Microsoft.Azure.EventHubs;
+using Azure.Messaging.EventHubs.Producer;
 using Serilog.Configuration;
 using Serilog.Core;
 using Serilog.Events;
@@ -59,7 +59,7 @@ namespace Serilog
         /// <exception cref="ArgumentNullException">A required parameter is null.</exception>
         public static LoggerConfiguration AzureEventHub(
             this LoggerSinkConfiguration loggerConfiguration,
-            EventHubClient eventHubClient,
+            EventHubProducerClient eventHubClient,
             string outputTemplate = DefaultOutputTemplate,
             IFormatProvider formatProvider = null,
             LogEventLevel restrictedToMinimumLevel = LevelAlias.Minimum,
@@ -96,7 +96,7 @@ namespace Serilog
         public static LoggerConfiguration AzureEventHub(
             this LoggerSinkConfiguration loggerConfiguration,
             ITextFormatter formatter,
-            EventHubClient eventHubClient,
+            EventHubProducerClient eventHubClient,
             LogEventLevel restrictedToMinimumLevel = LevelAlias.Minimum,
             bool writeInBatches = false,
             TimeSpan? period = null,
@@ -153,12 +153,7 @@ namespace Serilog
             if (string.IsNullOrWhiteSpace(eventHubName))
                 throw new ArgumentNullException("eventHubName");
 
-            var connectionstringBuilder = new EventHubsConnectionStringBuilder(connectionString)
-            {
-                EntityPath = eventHubName
-            };
-
-            var client = EventHubClient.CreateFromConnectionString(connectionstringBuilder.ToString());
+            var client = new EventHubProducerClient(connectionString, eventHubName);
 
             return AzureEventHub(loggerConfiguration, client, outputTemplate, formatProvider, restrictedToMinimumLevel, writeInBatches, period, batchPostingLimit);
         }
@@ -195,11 +190,7 @@ namespace Serilog
             if (string.IsNullOrWhiteSpace(eventHubName))
                 throw new ArgumentNullException("eventHubName");
 
-            var connectionStringBuilder = new EventHubsConnectionStringBuilder(connectionString)
-            {
-                EntityPath = eventHubName
-            };
-            var client = EventHubClient.CreateFromConnectionString(connectionStringBuilder.ToString());
+            var client = new EventHubProducerClient(connectionString, eventHubName);
 
             return AzureEventHub(loggerConfiguration, formatter, client, restrictedToMinimumLevel, writeInBatches, period, batchPostingLimit);
         }
