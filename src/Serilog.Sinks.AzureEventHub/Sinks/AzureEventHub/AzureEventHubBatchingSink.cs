@@ -28,7 +28,7 @@ namespace Serilog.Sinks.AzureEventHub
     /// <summary>
     /// Writes log events to an Azure Event Hub in batches.
     /// </summary>
-    public class AzureEventHubBatchingSink : PeriodicBatchingSink
+    public class AzureEventHubBatchingSink : IBatchedLogEventSink
     {
         private readonly EventHubProducerClient _eventHubClient;
         private readonly ITextFormatter _formatter;
@@ -38,30 +38,16 @@ namespace Serilog.Sinks.AzureEventHub
         /// </summary>
         /// <param name="eventHubClient">The EventHubClient to use in this sink.</param>
         /// <param name="formatter">Provides formatting for outputting log data</param>
-        /// <param name="batchSizeLimit"></param>
-        /// <param name="period"></param>
         public AzureEventHubBatchingSink(
             EventHubProducerClient eventHubClient,
-            ITextFormatter formatter,
-            int batchSizeLimit,
-            TimeSpan period)
-            : base(batchSizeLimit, period)
+            ITextFormatter formatter)
         {
-            if (batchSizeLimit < 1 || batchSizeLimit > 100)
-            {
-                throw new ArgumentException(
-                    "batchSizeLimit must be between 1 and 100.");
-            }
-
             _eventHubClient = eventHubClient;
             _formatter = formatter;
         }
 
-        /// <summary>
-        /// Emit a batch of log events, running to completion synchronously.
-        /// </summary>
-        /// <param name="events">The events to emit.</param>
-        protected override Task EmitBatchAsync(IEnumerable<LogEvent> events)
+        /// <inheritdoc />
+        public Task EmitBatchAsync(IEnumerable<LogEvent> events)
         {
             var batchedEvents = new List<EventData>();
             var batchPartitionKey = Guid.NewGuid().ToString();
@@ -86,5 +72,8 @@ namespace Serilog.Sinks.AzureEventHub
             }
             return _eventHubClient.SendAsync(batchedEvents, new SendEventOptions() { PartitionKey = batchPartitionKey });
         }
+
+        /// <inheritdoc />
+        public Task OnEmptyBatchAsync() => Task.CompletedTask;
     }
 }

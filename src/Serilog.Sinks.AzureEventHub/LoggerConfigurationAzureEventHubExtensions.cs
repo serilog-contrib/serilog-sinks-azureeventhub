@@ -21,6 +21,7 @@ using Serilog.Events;
 using Serilog.Formatting;
 using Serilog.Formatting.Display;
 using Serilog.Sinks.AzureEventHub;
+using Serilog.Sinks.PeriodicBatching;
 
 namespace Serilog
 {
@@ -68,16 +69,16 @@ namespace Serilog
             int? batchPostingLimit = null
             )
         {
-            if (loggerConfiguration == null) 
+            if (loggerConfiguration == null)
                 throw new ArgumentNullException("loggerConfiguration");
             if (eventHubClient == null)
                 throw new ArgumentNullException("eventHubClient");
-            if (outputTemplate == null) 
+            if (outputTemplate == null)
                 throw new ArgumentNullException("outputTemplate");
 
             var formatter = new MessageTemplateTextFormatter(outputTemplate, formatProvider);
 
-            return AzureEventHub(loggerConfiguration, formatter, eventHubClient, restrictedToMinimumLevel,writeInBatches, period, batchPostingLimit);
+            return AzureEventHub(loggerConfiguration, formatter, eventHubClient, restrictedToMinimumLevel, writeInBatches, period, batchPostingLimit);
         }
 
         /// <summary>
@@ -107,13 +108,33 @@ namespace Serilog
             if (eventHubClient == null)
                 throw new ArgumentNullException("eventHubClient");
 
-            var sink = writeInBatches ?
-                (ILogEventSink)new AzureEventHubBatchingSink(
+            var batchSizeLimit = batchPostingLimit ?? DefaultBatchPostingLimit;
+            if (batchSizeLimit < 1 || batchSizeLimit > 100)
+            {
+                throw new ArgumentException(
+                    "batchSizeLimit must be between 1 and 100.", nameof(batchPostingLimit));
+            }
+
+            ILogEventSink sink;
+            if (writeInBatches)
+            {
+                var eventHubSink = new AzureEventHubBatchingSink(
                     eventHubClient,
-                    formatter,
-                    batchPostingLimit ?? DefaultBatchPostingLimit,
-                    period ?? DefaultPeriod) :
-                new AzureEventHubSink(eventHubClient, formatter);
+                    formatter);
+                var batchingOptions = new PeriodicBatchingSinkOptions
+                {
+                    BatchSizeLimit = batchSizeLimit,
+                    Period = period ?? DefaultPeriod,
+                    EagerlyEmitFirstEvent = true,
+                    QueueLimit = 10000
+                };
+
+                sink = new PeriodicBatchingSink(eventHubSink, batchingOptions);
+            }
+            else
+            {
+                sink = new AzureEventHubSink(eventHubClient, formatter);
+            }
 
             return loggerConfiguration.Sink(sink, restrictedToMinimumLevel);
         }
