@@ -57,9 +57,28 @@ namespace Serilog.Sinks.AzureEventHub
                 _formatter.Format(logEvent, render);
                 body = Encoding.UTF8.GetBytes(render.ToString());
             }
+
             var eventHubData = new EventData(body);
+            eventHubData.Properties.Add("Timestamp", logEvent.Timestamp);
             eventHubData.Properties.Add("Type", "SerilogEvent");
             eventHubData.Properties.Add("Level", logEvent.Level.ToString());
+
+            if (logEvent.TraceId != null)
+            {
+                eventHubData.Properties.Add(nameof(logEvent.TraceId), logEvent.TraceId?.ToString());
+            }
+
+            if (logEvent.SpanId != null)
+            {
+                eventHubData.Properties.Add(nameof(logEvent.SpanId), logEvent.SpanId?.ToString());
+            }
+
+            if (logEvent.Exception != null)
+            {
+                eventHubData.Properties.Add(nameof(logEvent.Exception), logEvent.Exception);
+            }
+
+            eventHubData.Properties.Add(nameof(logEvent.Properties), logEvent.Properties);
 
             //Unfortunately no support for async in Serilog yet
             //https://github.com/serilog/serilog/issues/134
