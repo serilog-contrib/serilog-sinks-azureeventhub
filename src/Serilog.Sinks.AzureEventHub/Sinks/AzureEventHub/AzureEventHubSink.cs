@@ -78,7 +78,7 @@ namespace Serilog.Sinks.AzureEventHub
                 eventHubData.Properties.Add(nameof(logEvent.Exception), logEvent.Exception);
             }
 
-            eventHubData.Properties.Add(nameof(logEvent.Properties), logEvent.Properties);
+            eventHubData.AddFlattenedProperties(logEvent);
 
             //Unfortunately no support for async in Serilog yet
             //https://github.com/serilog/serilog/issues/134

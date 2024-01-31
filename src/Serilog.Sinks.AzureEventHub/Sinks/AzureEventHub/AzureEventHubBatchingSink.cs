@@ -85,7 +85,7 @@ namespace Serilog.Sinks.AzureEventHub
                     eventHubData.Properties.Add(nameof(logEvent.Exception), logEvent.Exception);
                 }
 
-                eventHubData.Properties.Add(nameof(logEvent.Properties), logEvent.Properties);
+                eventHubData.AddFlattenedProperties(logEvent);
 
                 batchedEvents.Add(eventHubData);
             }
