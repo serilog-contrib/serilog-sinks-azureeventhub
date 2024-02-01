@@ -51,16 +51,16 @@ namespace Serilog
             LogEventLevel restrictedToMinimumLevel = LevelAlias.Minimum
             )
         {
-            if (loggerConfiguration == null) 
+            if (loggerConfiguration == null)
                 throw new ArgumentNullException("loggerConfiguration");
             if (eventHubClient == null)
                 throw new ArgumentNullException("eventHubClient");
-            if (outputTemplate == null) 
+            if (outputTemplate == null)
                 throw new ArgumentNullException("outputTemplate");
 
             var formatter = new MessageTemplateTextFormatter(outputTemplate, formatProvider);
 
-            return AzureEventHub(loggerConfiguration, formatter, eventHubClient, restrictedToMinimumLevel);
+            return AzureEventHub(loggerConfiguration, formatter, "text/plain", false, eventHubClient, restrictedToMinimumLevel);
         }
 
         /// <summary>
@@ -68,6 +68,8 @@ namespace Serilog
         /// </summary>
         /// <param name="loggerConfiguration">The logger configuration.</param>
         /// <param name="formatter">Formatter used to convert log events to text.</param>
+        /// <param name="contentType">Content type that the <paramref name="formatter"/> produces.</param>
+        /// <param name="shouldIncludeProperties">Should the properties be included in the event data. You probably do not want this when using a JSON formatted that includes properties already.</param>
         /// <param name="eventHubClient">The Event Hub to use to insert the log entries to.</param>
         /// <param name="restrictedToMinimumLevel">The minimum log event level required in order to write an event to the sink.</param>
         /// <returns>Logger configuration, allowing configuration to continue.</returns>
@@ -75,6 +77,8 @@ namespace Serilog
         public static LoggerConfiguration AzureEventHub(
             this LoggerAuditSinkConfiguration loggerConfiguration,
             ITextFormatter formatter,
+            string contentType,
+            bool shouldIncludeProperties,
             EventHubProducerClient eventHubClient,
             LogEventLevel restrictedToMinimumLevel = LevelAlias.Minimum)
         {
@@ -83,7 +87,7 @@ namespace Serilog
             if (eventHubClient == null)
                 throw new ArgumentNullException("eventHubClient");
 
-            var sink = new AzureEventHubSink(eventHubClient, formatter);
+            var sink = new AzureEventHubSink(eventHubClient, formatter, contentType, shouldIncludeProperties);
             return loggerConfiguration.Sink(sink, restrictedToMinimumLevel);
         }
 
@@ -125,6 +129,8 @@ namespace Serilog
         /// </summary>
         /// <param name="loggerConfiguration">The logger configuration.</param>
         /// <param name="formatter">Formatter used to convert log events to text.</param>
+        /// <param name="contentType">Content type that the <paramref name="formatter"/> produces.</param>
+        /// <param name="shouldIncludeProperties">Should the properties be included in the event data. You probably do not want this when using a JSON formatted that includes properties already.</param>
         /// <param name="connectionString">The Event Hub connection string.</param>
         /// <param name="eventHubName">The Event Hub name.</param>
         /// <param name="restrictedToMinimumLevel">The minimum log event level required in order to write an event to the sink.</param>
@@ -133,6 +139,8 @@ namespace Serilog
         public static LoggerConfiguration AzureEventHub(
             this LoggerAuditSinkConfiguration loggerConfiguration,
             ITextFormatter formatter,
+            string contentType,
+            bool shouldIncludeProperties,
             string connectionString,
             string eventHubName,
             LogEventLevel restrictedToMinimumLevel = LevelAlias.Minimum
@@ -146,7 +154,7 @@ namespace Serilog
                 throw new ArgumentNullException("eventHubName");
 
             var client = new EventHubProducerClient(connectionString, eventHubName);
-            return AzureEventHub(loggerConfiguration, formatter, client, restrictedToMinimumLevel);
+            return AzureEventHub(loggerConfiguration, formatter, contentType, shouldIncludeProperties, client, restrictedToMinimumLevel);
         }
     }
 }

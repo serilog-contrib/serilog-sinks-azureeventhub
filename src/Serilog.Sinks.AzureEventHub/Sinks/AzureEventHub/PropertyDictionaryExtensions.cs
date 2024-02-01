@@ -1,4 +1,8 @@
-﻿using System;
+﻿// SPDX-FileCopyrightText: 2017 Justin Detmar
+// SPDX-License-Identifier: MIT
+// Source: https://github.com/JDetmar/NLog.Extensions.AzureStorage/blob/9acec1c06306adada497671b7ef05a0a814fff30/src/NLog.Extensions.AzureEventHub/EventHubTarget.cs#L452
+
+using System;
 using System.Globalization;
 using Azure.Messaging.EventHubs;
 using Serilog.Events;
