@@ -29,20 +29,28 @@ namespace Serilog.Sinks.AzureEventHub
     /// </summary>
     public class AzureEventHubSink : ILogEventSink
     {
-        readonly EventHubProducerClient _eventHubClient;
-        readonly ITextFormatter _formatter;
+        private readonly EventHubProducerClient _eventHubClient;
+        private readonly ITextFormatter _formatter;
+        private readonly string _contentType;
+        private readonly bool _shouldIncludeProperties;
 
         /// <summary>
         /// Construct a sink that saves log events to the specified EventHubClient.
         /// </summary>
         /// <param name="eventHubClient">The EventHubClient to use in this sink.</param>
         /// <param name="formatter">Provides formatting for outputting log data</param>
+        /// <param name="contentType">Content type that the <paramref name="formatter"/> produces.</param>
+        /// <param name="shouldIncludeProperties">Should the properties be included in the event data.</param>
         public AzureEventHubSink(
             EventHubProducerClient eventHubClient,
-            ITextFormatter formatter)
+            ITextFormatter formatter,
+            string contentType,
+            bool shouldIncludeProperties)
         {
             _eventHubClient = eventHubClient;
             _formatter = formatter;
+            _contentType = contentType;
+            _shouldIncludeProperties = shouldIncludeProperties;
         }
 
         /// <summary>
@@ -57,9 +65,36 @@ namespace Serilog.Sinks.AzureEventHub
                 _formatter.Format(logEvent, render);
                 body = Encoding.UTF8.GetBytes(render.ToString());
             }
-            var eventHubData = new EventData(body);
+
+            var eventHubData = EventHubsModelFactory.EventData(new BinaryData(body));
+            if (!string.IsNullOrWhiteSpace(_contentType))
+            {
+                eventHubData.ContentType = _contentType;
+            }
+
+            eventHubData.Properties.Add("Timestamp", logEvent.Timestamp);
             eventHubData.Properties.Add("Type", "SerilogEvent");
             eventHubData.Properties.Add("Level", logEvent.Level.ToString());
+
+            if (logEvent.TraceId != null)
+            {
+                eventHubData.Properties.Add(nameof(logEvent.TraceId), logEvent.TraceId?.ToString());
+            }
+
+            if (logEvent.SpanId != null)
+            {
+                eventHubData.Properties.Add(nameof(logEvent.SpanId), logEvent.SpanId?.ToString());
+            }
+
+            if (logEvent.Exception != null)
+            {
+                eventHubData.Properties.Add(nameof(logEvent.Exception), logEvent.Exception);
+            }
+
+            if (_shouldIncludeProperties)
+            {
+                eventHubData.AddFlattenedProperties(logEvent);
+            }
 
             //Unfortunately no support for async in Serilog yet
             //https://github.com/serilog/serilog/issues/134

@@ -21,6 +21,7 @@ using Serilog.Events;
 using Serilog.Formatting;
 using Serilog.Formatting.Display;
 using Serilog.Sinks.AzureEventHub;
+using Serilog.Sinks.PeriodicBatching;
 
 namespace Serilog
 {
@@ -68,16 +69,16 @@ namespace Serilog
             int? batchPostingLimit = null
             )
         {
-            if (loggerConfiguration == null) 
+            if (loggerConfiguration == null)
                 throw new ArgumentNullException("loggerConfiguration");
             if (eventHubClient == null)
                 throw new ArgumentNullException("eventHubClient");
-            if (outputTemplate == null) 
+            if (outputTemplate == null)
                 throw new ArgumentNullException("outputTemplate");
 
             var formatter = new MessageTemplateTextFormatter(outputTemplate, formatProvider);
 
-            return AzureEventHub(loggerConfiguration, formatter, eventHubClient, restrictedToMinimumLevel,writeInBatches, period, batchPostingLimit);
+            return AzureEventHub(loggerConfiguration, formatter, "text/plain", false, eventHubClient, restrictedToMinimumLevel, writeInBatches, period, batchPostingLimit);
         }
 
         /// <summary>
@@ -85,6 +86,8 @@ namespace Serilog
         /// </summary>
         /// <param name="loggerConfiguration">The logger configuration.</param>
         /// <param name="formatter">Formatter used to convert log events to text.</param>
+        /// <param name="contentType">Content type that the <paramref name="formatter"/> produces.</param>
+        /// <param name="shouldIncludeProperties">Should the properties be included in the event data. You probably do not want this when using a JSON formatted that includes properties already.</param>
         /// <param name="eventHubClient">The Event Hub to use to insert the log entries to.</param>
         /// <param name="restrictedToMinimumLevel">The minimum log event level required in order to write an event to the sink.</param>
         /// <param name="writeInBatches">Use a periodic batching sink, as opposed to a synchronous one-at-a-time sink; this alters the partition
@@ -96,6 +99,8 @@ namespace Serilog
         public static LoggerConfiguration AzureEventHub(
             this LoggerSinkConfiguration loggerConfiguration,
             ITextFormatter formatter,
+            string contentType,
+            bool shouldIncludeProperties,
             EventHubProducerClient eventHubClient,
             LogEventLevel restrictedToMinimumLevel = LevelAlias.Minimum,
             bool writeInBatches = false,
@@ -107,13 +112,35 @@ namespace Serilog
             if (eventHubClient == null)
                 throw new ArgumentNullException("eventHubClient");
 
-            var sink = writeInBatches ?
-                (ILogEventSink)new AzureEventHubBatchingSink(
+            var batchSizeLimit = batchPostingLimit ?? DefaultBatchPostingLimit;
+            if (batchSizeLimit < 1 || batchSizeLimit > 100)
+            {
+                throw new ArgumentException(
+                    "batchSizeLimit must be between 1 and 100.", nameof(batchPostingLimit));
+            }
+
+            ILogEventSink sink;
+            if (writeInBatches)
+            {
+                var eventHubSink = new AzureEventHubBatchingSink(
                     eventHubClient,
                     formatter,
-                    batchPostingLimit ?? DefaultBatchPostingLimit,
-                    period ?? DefaultPeriod) :
-                new AzureEventHubSink(eventHubClient, formatter);
+                    contentType,
+                    shouldIncludeProperties);
+                var batchingOptions = new PeriodicBatchingSinkOptions
+                {
+                    BatchSizeLimit = batchSizeLimit,
+                    Period = period ?? DefaultPeriod,
+                    EagerlyEmitFirstEvent = true,
+                    QueueLimit = 10000
+                };
+
+                sink = new PeriodicBatchingSink(eventHubSink, batchingOptions);
+            }
+            else
+            {
+                sink = new AzureEventHubSink(eventHubClient, formatter, contentType, shouldIncludeProperties);
+            }
 
             return loggerConfiguration.Sink(sink, restrictedToMinimumLevel);
         }
@@ -163,6 +190,8 @@ namespace Serilog
         /// </summary>
         /// <param name="loggerConfiguration">The logger configuration.</param>
         /// <param name="formatter">Formatter used to convert log events to text.</param>
+        /// <param name="contentType">Content type that the <paramref name="formatter"/> produces.</param>
+        /// <param name="shouldIncludeProperties">Should the properties be included in the event data. You probably do not want this when using a JSON formatted that includes properties already.</param>
         /// <param name="connectionString">The Event Hub connection string.</param>
         /// <param name="eventHubName">The Event Hub name.</param>
         /// <param name="restrictedToMinimumLevel">The minimum log event level required in order to write an event to the sink.</param>
@@ -175,6 +204,8 @@ namespace Serilog
         public static LoggerConfiguration AzureEventHub(
             this LoggerSinkConfiguration loggerConfiguration,
             ITextFormatter formatter,
+            string contentType,
+            bool shouldIncludeProperties,
             string connectionString,
             string eventHubName,
             LogEventLevel restrictedToMinimumLevel = LevelAlias.Minimum,
@@ -192,7 +223,7 @@ namespace Serilog
 
             var client = new EventHubProducerClient(connectionString, eventHubName);
 
-            return AzureEventHub(loggerConfiguration, formatter, client, restrictedToMinimumLevel, writeInBatches, period, batchPostingLimit);
+            return AzureEventHub(loggerConfiguration, formatter, contentType, shouldIncludeProperties, client, restrictedToMinimumLevel, writeInBatches, period, batchPostingLimit);
         }
     }
 }

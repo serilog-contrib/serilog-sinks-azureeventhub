@@ -28,40 +28,34 @@ namespace Serilog.Sinks.AzureEventHub
     /// <summary>
     /// Writes log events to an Azure Event Hub in batches.
     /// </summary>
-    public class AzureEventHubBatchingSink : PeriodicBatchingSink
+    public class AzureEventHubBatchingSink : IBatchedLogEventSink
     {
         private readonly EventHubProducerClient _eventHubClient;
         private readonly ITextFormatter _formatter;
+        private readonly string _contentType;
+        private readonly bool _shouldIncludeProperties;
 
         /// <summary>
         /// Construct a sink that saves log events to the specified EventHubClient.
         /// </summary>
         /// <param name="eventHubClient">The EventHubClient to use in this sink.</param>
         /// <param name="formatter">Provides formatting for outputting log data</param>
-        /// <param name="batchSizeLimit"></param>
-        /// <param name="period"></param>
+        /// <param name="contentType">Content type that the <paramref name="formatter"/> produces.</param>
+        /// <param name="shouldIncludeProperties">Should the properties be included in the event data.</param>
         public AzureEventHubBatchingSink(
             EventHubProducerClient eventHubClient,
             ITextFormatter formatter,
-            int batchSizeLimit,
-            TimeSpan period)
-            : base(batchSizeLimit, period)
+            string contentType,
+            bool shouldIncludeProperties)
         {
-            if (batchSizeLimit < 1 || batchSizeLimit > 100)
-            {
-                throw new ArgumentException(
-                    "batchSizeLimit must be between 1 and 100.");
-            }
-
             _eventHubClient = eventHubClient;
             _formatter = formatter;
+            _contentType = contentType;
+            _shouldIncludeProperties = shouldIncludeProperties;
         }
 
-        /// <summary>
-        /// Emit a batch of log events, running to completion synchronously.
-        /// </summary>
-        /// <param name="events">The events to emit.</param>
-        protected override Task EmitBatchAsync(IEnumerable<LogEvent> events)
+        /// <inheritdoc />
+        public Task EmitBatchAsync(IEnumerable<LogEvent> events)
         {
             var batchedEvents = new List<EventData>();
             var batchPartitionKey = Guid.NewGuid().ToString();
@@ -77,14 +71,44 @@ namespace Serilog.Sinks.AzureEventHub
                     _formatter.Format(logEvent, render);
                     body = Encoding.UTF8.GetBytes(render.ToString());
                 }
-                var eventHubData = new EventData(body);
-                
+
+                var eventHubData = EventHubsModelFactory.EventData(new BinaryData(body));
+                if (!string.IsNullOrWhiteSpace(_contentType))
+                {
+                    eventHubData.ContentType = _contentType;
+                }
+
+                eventHubData.Properties.Add("Timestamp", logEvent.Timestamp);
                 eventHubData.Properties.Add("Type", "SerilogEvent");
                 eventHubData.Properties.Add("Level", logEvent.Level.ToString());
 
+                if (logEvent.TraceId != null)
+                {
+                    eventHubData.Properties.Add(nameof(logEvent.TraceId), logEvent.TraceId?.ToString());
+                }
+
+                if (logEvent.SpanId != null)
+                {
+                    eventHubData.Properties.Add(nameof(logEvent.SpanId), logEvent.SpanId?.ToString());
+                }
+
+                if (logEvent.Exception != null)
+                {
+                    eventHubData.Properties.Add(nameof(logEvent.Exception), logEvent.Exception);
+                }
+
+                if (_shouldIncludeProperties)
+                {
+                    eventHubData.AddFlattenedProperties(logEvent);
+                }
+
                 batchedEvents.Add(eventHubData);
             }
+
             return _eventHubClient.SendAsync(batchedEvents, new SendEventOptions() { PartitionKey = batchPartitionKey });
         }
+
+        /// <inheritdoc />
+        public Task OnEmptyBatchAsync() => Task.CompletedTask;
     }
 }
